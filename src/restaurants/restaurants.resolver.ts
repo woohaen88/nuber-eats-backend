@@ -1,27 +1,44 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { Restaurant } from './entities/restaurant.entity';
 import { CreateRestaurantDto } from './dtos/create-restaurant.dto';
+import { RestaurantService } from './restaurant.service';
+import { UpdateRestaurantDto } from './dtos/update-restaurant.dto';
 
 @Resolver(() => Restaurant)
 export class restaurantResolver {
+  constructor(private readonly restaurantService: RestaurantService) {}
+
   @Query(() => [Restaurant])
-  restaurants(@Args('veganOnly') veganOnly: boolean): Restaurant[] {
-    console.log('veganOnly: ', veganOnly);
-    return [];
+  restaurants(): Promise<Restaurant[]> {
+    return this.restaurantService.getAll();
   }
 
-  // @Mutation(() => Boolean)
-  // createRestaurant(
-  //   @Args('name') name: string,
-  //   @Args('isVegan') isVegan: boolean,
-  //   @Args('address') address: string,
-  //   @Args('ownerName') ownerName: string,
-  // ): boolean {
-  //   return true;
-  // }
   @Mutation(() => Boolean)
-  createRestaurant(@Args() createRestaurantDto: CreateRestaurantDto): boolean {
+  async createRestaurant(
+    @Args('input') createRestaurantDto: CreateRestaurantDto,
+  ): Promise<boolean> {
     console.log(createRestaurantDto);
-    return true;
+    try {
+      await this.restaurantService.createRestaurant(createRestaurantDto);
+      return true;
+    } catch (e) {
+      console.log('error: ', e);
+      return false;
+    }
+  }
+
+  @Mutation(() => Boolean)
+  async updateRestaurant(
+    // @Args('id') id: number,
+    // @Args('data') data: UpdateRestaurantDto,
+    @Args('input') updateRestaurantDto: UpdateRestaurantDto,
+  ): Promise<boolean> {
+    try {
+      await this.restaurantService.updateRestaurant(updateRestaurantDto);
+      return true;
+    } catch (e) {
+      console.log('error: ', e);
+      return false;
+    }
   }
 }
