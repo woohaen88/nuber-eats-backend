@@ -14,7 +14,7 @@ export class UsersService {
     email,
     password,
     role,
-  }: CreateAccountInput): Promise<string | undefined> {
+  }: CreateAccountInput): Promise<[boolean, string?]> {
     try {
       // check new user
       const exists = await this.users.findOneBy({
@@ -22,14 +22,15 @@ export class UsersService {
       });
       if (exists) {
         // make error
-        return 'There is a user with that email already';
+        return [false, 'There is a user with that email already'];
       }
 
       // create user
       await this.users.save(this.users.create({ email, password, role }));
+      return [true];
     } catch (error) {
       // make error
-      return '저기여 계정을 만들수가 없어라';
+      return [false, '저기여 계정을 만들수가 없어라'];
     }
   }
 }
