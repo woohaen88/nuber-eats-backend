@@ -4,11 +4,13 @@ import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { CreateAccountInput } from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
+import { JwtService } from 'src/jwt/jwt.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    private readonly jwtService: JwtService,
   ) {}
 
   async createAccount({
@@ -59,9 +61,11 @@ export class UsersService {
           error: '저기여~ 다른 패스워드를 입력하면 오또케',
         };
       }
+      // make a JWT and give it to the user
+      const token = this.jwtService.sign(user.id);
       return {
         ok: true,
-        token: 'lalalala',
+        token,
       };
     } catch (error) {
       return {
