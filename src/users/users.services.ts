@@ -86,6 +86,7 @@ export class UsersService {
   ): Promise<User> {
     const user = await this.users.findOneBy({ id: userId });
 
+    // TODO: [] Email Verify
     if (email) user.email = email;
     if (password) user.password = password;
 
