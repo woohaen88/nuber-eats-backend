@@ -10,6 +10,7 @@ import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { AuthUser } from 'src/auth/auth-user.decorators';
+import { UserProfileInput, UserProfileOutout } from './dtos/user-profile.dto';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -56,5 +57,25 @@ export class UsersResolver {
   @UseGuards(AuthGuard)
   me(@AuthUser() authUser: User) {
     return authUser;
+  }
+
+  @UseGuards(AuthGuard)
+  @Query(() => UserProfileOutout)
+  async userProfile(
+    @Args() userProfileInput: UserProfileInput,
+  ): Promise<UserProfileOutout> {
+    try {
+      const user = await this.userService.findById(userProfileInput.userId);
+      if (!user) throw Error();
+      return {
+        ok: true,
+        user: user,
+      };
+    } catch (error) {
+      return {
+        error: '저기여! 유저가 없어용!!',
+        ok: false,
+      };
+    }
   }
 }
