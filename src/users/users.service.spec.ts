@@ -12,6 +12,7 @@ const mockRepository = () => ({
   create: jest.fn(),
   findOneBy: jest.fn(),
   delete: jest.fn(),
+  findOneOrFail: jest.fn(),
 });
 
 const mockJwtService = {
@@ -181,7 +182,31 @@ describe('UserService', () => {
       expect(result).toEqual({ ok: false, error });
     });
   });
-  it.todo('findById');
-  it.todo('editProfile');
+  describe('findById', () => {
+    // ========= Arguments =========
+    const findByIdArgs = {
+      id: 1,
+    };
+    it('should find an existing user', async () => {
+      // ========= mocking =========
+      usersRepository.findOneOrFail.mockResolvedValue(findByIdArgs);
+      const result = await service.findById(1);
+
+      // ========= test =========
+      expect(result).toEqual({ ok: true, user: findByIdArgs });
+    });
+    it('should fail if no user is found', async () => {
+      // ========= mocking =========
+      usersRepository.findOneOrFail.mockRejectedValue(new Error());
+
+      // ========= test =========
+      const result = await service.findById(findByIdArgs.id);
+      expect(result).toEqual({
+        ok: false,
+        error: '저기여 유저가 없어라!!',
+      });
+    });
+  });
+  describe('editProfile', () => {});
   it.todo('emailVerify');
 });
