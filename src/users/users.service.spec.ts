@@ -207,6 +207,46 @@ describe('UserService', () => {
       });
     });
   });
-  describe('editProfile', () => {});
+  describe('editProfile', () => {
+    // ========= Argument =========
+    const oldUser = {
+      email: 'old@example.com',
+      verified: true,
+    };
+    const editProfileArgs = {
+      userId: 1,
+      input: { email: 'new@example.com' },
+    };
+    const newVerification = {
+      code: 'verifyCode',
+    };
+    const newUser = {
+      verified: false,
+      email: editProfileArgs.input.email,
+    };
+    it('should change email', async () => {
+      // ========== mocking ==========
+      usersRepository.findOne.mockResolvedValue({
+        ...oldUser,
+      });
+      verificationsRepository.create.mockReturnValue(newVerification);
+      verificationsRepository.save.mockResolvedValue(newVerification);
+
+      // ========== test ==========
+      await service.editProfile(editProfileArgs.userId, editProfileArgs.input);
+
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: editProfileArgs.userId },
+      });
+
+      expect(verificationsRepository.create).toHaveBeenCalledWith({
+        user: newUser,
+      });
+      expect(verificationsRepository.save).toHaveBeenCalledWith(
+        newVerification,
+      );
+    });
+  });
   it.todo('emailVerify');
 });
