@@ -6,11 +6,14 @@ import { CreateAccountInput } from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
 import { JwtService } from 'src/jwt/jwt.service';
 import { EditProfileInput } from './dtos/edit.user-profile.dto';
+import { Verification } from './entities/verification.user.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(Verification)
+    private readonly verifications: Repository<Verification>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -30,7 +33,10 @@ export class UsersService {
       }
 
       // create user
-      await this.users.save(this.users.create({ email, password, role }));
+      const user = await this.users.save(
+        this.users.create({ email, password, role }),
+      );
+      await this.verifications.save(this.verifications.create({ user: user }));
       return [true];
     } catch (error) {
       // make error
@@ -46,7 +52,10 @@ export class UsersService {
 
     try {
       // find the user with the email
-      const user = await this.users.findOne({ where: { email: email } });
+      const user = await this.users.findOne({
+        where: { email: email },
+        select: ['password', 'id'],
+      });
       if (!user) {
         return {
           ok: false,
@@ -87,9 +96,34 @@ export class UsersService {
     const user = await this.users.findOneBy({ id: userId });
 
     // TODO: [] Email Verify
-    if (email) user.email = email;
+    if (email) {
+      user.email = email;
+      user.verified = false;
+      await this.verifications.save(this.verifications.create({ user: user }));
+    }
     if (password) user.password = password;
 
     return await this.users.save(user);
+  }
+
+  async emailVerify(code: string): Promise<boolean> {
+    try {
+      const verification = await this.verifications.findOne({
+        where: {
+          code,
+        },
+        relations: ['user'],
+      });
+
+      if (verification) {
+        verification.user.verified = true;
+        this.users.save(verification.user);
+        return true;
+      }
+      throw new Error();
+    } catch (error) {
+      console.log('[ERROR] -> user.service.emailVerify: ', error);
+      return false;
+    }
   }
 }
