@@ -145,7 +145,8 @@ export class UsersService {
 
       if (verification) {
         verification.user.verified = true;
-        this.users.save(verification.user);
+        await this.users.save(verification.user);
+        await this.verifications.delete(verification.id);
         return { ok: true };
       }
       return { ok: false, error: '이메일 인증 실패했어라!' };
