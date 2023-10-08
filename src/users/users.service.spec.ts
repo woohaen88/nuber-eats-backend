@@ -224,6 +224,10 @@ describe('UserService', () => {
       verified: false,
       email: editProfileArgs.input.email,
     };
+    const editChangePasswordArgs = {
+      userId: 1,
+      input: { password: 'new@enew.passwordxample.com' },
+    };
     it('should change email', async () => {
       // ========== mocking ==========
       usersRepository.findOne.mockResolvedValue({
@@ -247,6 +251,40 @@ describe('UserService', () => {
         newVerification,
       );
     });
+    it('should change password', async () => {
+      // ========== mocking ==========
+      usersRepository.findOne.mockResolvedValue({
+        password: 'old',
+      });
+
+      // ========== test ==========
+      const result = await service.editProfile(
+        editChangePasswordArgs.userId,
+        editChangePasswordArgs.input,
+      );
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith(
+        editChangePasswordArgs.input,
+      );
+      expect(result).toEqual({ ok: true });
+    });
+    it('should fail on exception', async () => {
+      // ========== mocking ==========
+      usersRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.editProfile(
+        editProfileArgs.userId,
+        editProfileArgs.input,
+      );
+
+      expect(result).toEqual({
+        ok: false,
+        error: '저기여!! 유저 프로파일을 업데이트 할 수 없어요',
+      });
+    });
   });
-  it.todo('emailVerify');
+  describe('emailVerify', () => {
+    it('should verify email', () => {});
+    it.todo('should fail on verification not found');
+    it.todo('should fail on exception');
+  });
 });
