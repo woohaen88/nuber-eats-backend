@@ -186,3 +186,6 @@ $RECYCLE.BIN/
 
 # db
 db-data
+
+# webwtorm
+.idea

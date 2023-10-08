@@ -283,8 +283,51 @@ describe('UserService', () => {
     });
   });
   describe('emailVerify', () => {
-    it('should verify email', () => {});
-    it.todo('should fail on verification not found');
-    it.todo('should fail on exception');
+    it('should verify email', async () => {
+      // ========== const ==========
+      const mockedVerification = {
+        user: { verified: false },
+        id: 1,
+      };
+      // ========== mocking ==========
+      verificationsRepository.findOne.mockResolvedValue(mockedVerification);
+
+      // ========== test ==========
+      const result = await service.emailVerify('');
+      expect(verificationsRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.findOne).toHaveBeenCalledWith(
+        expect.any(Object),
+      );
+
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith({ verified: true });
+
+      expect(verificationsRepository.delete).toHaveBeenCalledTimes(1);
+      expect(verificationsRepository.delete).toHaveBeenCalledWith(
+        mockedVerification.id,
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
+    it('should fail on verification not found', async () => {
+      // ========== mocking ==========
+      verificationsRepository.findOne.mockResolvedValue(undefined);
+
+      // ========== test ===========
+      const result = await service.emailVerify('');
+      expect(result).toEqual({
+        ok: false,
+        error: '이메일 인증 정보를 받을수가 없어라!!',
+      });
+    });
+    it('should fail on exception', async () => {
+      // ========== mocking ==========
+      const error = new Error();
+      verificationsRepository.findOne.mockRejectedValue(error);
+
+      // ========== test ===========
+      const result = await service.emailVerify('');
+      expect(result).toEqual({ ok: false, error: '이메일 인증에 실패했어용~' });
+    });
   });
 });

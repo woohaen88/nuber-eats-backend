@@ -97,7 +97,7 @@ export class UsersService {
         user,
       };
     } catch (error) {
-      console.log('[ERROR] -> users.services.findById : ', error);
+      console.log('[ERROR] -> users.services.findById');
       return {
         ok: false,
         error: '저기여 유저가 없어라!!',
@@ -146,10 +146,10 @@ export class UsersService {
         await this.verifications.delete(verification.id);
         return { ok: true };
       }
-      return { ok: false, error: '이메일 인증 실패했어라!' };
+      return { ok: false, error: '이메일 인증 정보를 받을수가 없어라!!' };
     } catch (error) {
-      console.log('[ERROR] -> user.service.emailVerify: ', error);
-      return { ok: false, error };
+      console.log('[ERROR] -> user.service.emailVerify');
+      return { ok: false, error: '이메일 인증에 실패했어용~' };
     }
   }
 }
