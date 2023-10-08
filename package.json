@@ -91,7 +91,11 @@
       ".constants.ts",
       ".resolver.ts",
       ".module.ts",
-      ".middleware.ts"
+      ".middleware.ts",
+      "auth",
+      "restaurants",
+      "main.ts",
+      "dtos"
     ]
   }
 }
