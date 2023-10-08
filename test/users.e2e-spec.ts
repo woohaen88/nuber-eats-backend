@@ -248,23 +248,22 @@ describe('UserModule (e2e)', () => {
   });
 
   describe('emailVerify', () => {
-    let code: string;
+    let verificationCode: string;
     /**
      * DB 접근
      * */
     beforeAll(async () => {
       const [verification] = await verifyRepository.find();
-      code = verification.code;
+      verificationCode = verification.code;
     });
-    it('should be email verify', () =>
+    it('should email verify', () =>
       request(app.getHttpServer())
         .post(GRAPHQL_ENDPOINT)
-        .set('X-JWT', jwtToken)
         .send({
           query: `
           mutation{
             emailVerify(input: {
-              code: "${code}"
+              code: "${verificationCode}"
             }){
               error
               ok
@@ -279,7 +278,7 @@ describe('UserModule (e2e)', () => {
           expect(error).toBe(null);
         }));
 
-    it('should not be email verify', () =>
+    it('should fail on wrong verification code', () =>
       request(app.getHttpServer())
         .post(GRAPHQL_ENDPOINT)
         .set('X-JWT', jwtToken)
@@ -287,7 +286,7 @@ describe('UserModule (e2e)', () => {
           query: `
           mutation{
             emailVerify(input: {
-              code: "${code}"
+              code: "xxxxxxx"
             }){
               error
               ok
