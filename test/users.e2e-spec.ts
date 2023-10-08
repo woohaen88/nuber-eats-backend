@@ -6,6 +6,7 @@ import { DataSource, Repository } from 'typeorm';
 import * as process from 'process';
 import { User } from '../src/users/entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Verification } from '../src/users/entities/verification.user.entity';
 
 // ========== constant ==========
 const GRAPHQL_ENDPOINT = '/graphql';
@@ -19,6 +20,7 @@ const testUser = {
 describe('UserModule (e2e)', () => {
   let app: INestApplication;
   let usersRepository: Repository<User>;
+  let verifyRepository: Repository<Verification>;
   let jwtToken: string;
 
   beforeAll(async () => {
@@ -28,6 +30,9 @@ describe('UserModule (e2e)', () => {
 
     app = module.createNestApplication();
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
+    verifyRepository = module.get<Repository<Verification>>(
+      getRepositoryToken(Verification),
+    );
 
     await app.init();
   });
@@ -241,6 +246,105 @@ describe('UserModule (e2e)', () => {
           expect(error.message).toBe('Forbidden resource');
         }));
   });
-  it.todo('emailVerify');
-  it.todo('editProfile');
+
+  describe('emailVerify', () => {
+    let code: string;
+    /**
+     * DB 접근
+     * */
+    beforeAll(async () => {
+      const [verification] = await verifyRepository.find();
+      code = verification.code;
+    });
+    it('should be email verify', () =>
+      request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `
+          mutation{
+            emailVerify(input: {
+              code: "${code}"
+            }){
+              error
+              ok
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const { ok, error } = res.body.data.emailVerify;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        }));
+
+    it('should not be email verify', () =>
+      request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `
+          mutation{
+            emailVerify(input: {
+              code: "${code}"
+            }){
+              error
+              ok
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const { ok, error } = res.body.data.emailVerify;
+          expect(ok).toBe(false);
+          expect(error).toBe('이메일 인증 정보를 받을수가 없어라!!');
+        }));
+  });
+
+  describe('editProfile', () => {
+    const NEW_EMAIL = 'new@example.com';
+    it('should change email', () =>
+      request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `
+          mutation {
+              editProfile(input:{
+                email: "${NEW_EMAIL}"
+              }) {
+                ok
+                error
+              }
+            }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const { ok, error } = res.body.data.editProfile;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        }));
+
+    it('should have new email', () =>
+      request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `
+          {
+            me {
+              email
+            }
+          }
+        `,
+        })
+        .expect(200)
+        .expect((res) => {
+          const { email } = res.body.data.me;
+          expect(email).toBe(NEW_EMAIL);
+        }));
+  });
 });
