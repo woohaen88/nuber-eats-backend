@@ -46,7 +46,11 @@ describe('이름', () => {
 it.todo('something');
 it.todo('verify');
 });
-
-
-
 ```
+
+## Restaurant Model
+
+- name  
+- category
+- address
+- coverImage
