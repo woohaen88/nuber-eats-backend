@@ -2,15 +2,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { CreateAccountInput } from './dtos/create-account.dto';
-import { LoginInput } from './dtos/login.dto';
+import {
+  CreateAccountInput,
+  CreateAccountOutput,
+} from './dtos/create-account.dto';
+import { LoginInput, LoginOutput } from './dtos/login.dto';
 import { JwtService } from 'src/jwt/jwt.service';
-import { EditProfileInput } from './dtos/edit.user-profile.dto';
+import {
+  EditProfileInput,
+  EditProfileOutput,
+} from './dtos/edit.user-profile.dto';
+import { Verification } from './entities/verification.user.entity';
+import { UserProfileOutout } from './dtos/user-profile.dto';
+import { EmailVerifyOutput } from './dtos/verify-email.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(Verification)
+    private readonly verifications: Repository<Verification>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -18,35 +29,37 @@ export class UsersService {
     email,
     password,
     role,
-  }: CreateAccountInput): Promise<[boolean, string?]> {
+  }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
       // check new user
-      const exists = await this.users.findOneBy({
-        email: email,
-      });
+      const exists = await this.users.findOne({ where: { email } });
+
       if (exists) {
         // make error
-        return [false, 'There is a user with that email already'];
+        return { ok: false, error: 'There is a user with that email already' };
       }
 
       // create user
-      await this.users.save(this.users.create({ email, password, role }));
-      return [true];
+      const user = await this.users.save(
+        this.users.create({ email, password, role }),
+      );
+      await this.verifications.save(this.verifications.create({ user }));
+      return { ok: true };
     } catch (error) {
       // make error
-      return [false, '저기여 계정을 만들수가 없어라'];
+      return { ok: false, error: '저기여 계정을 만들수가 없어라' };
     }
   }
 
-  async login({
-    email,
-    password,
-  }: LoginInput): Promise<{ ok: boolean; error?: string; token?: string }> {
+  async login({ email, password }: LoginInput): Promise<LoginOutput> {
     // make a JWT and give it to the user
 
     try {
       // find the user with the email
-      const user = await this.users.findOne({ where: { email: email } });
+      const user = await this.users.findOne({
+        where: { email },
+        select: ['password', 'id'],
+      });
       if (!user) {
         return {
           ok: false,
@@ -76,20 +89,67 @@ export class UsersService {
     }
   }
 
-  async findById(id: number): Promise<User> {
-    return await this.users.findOneBy({ id: id });
+  async findById(id: number): Promise<UserProfileOutout> {
+    try {
+      const user = await this.users.findOneOrFail({ where: { id } });
+      return {
+        ok: true,
+        user,
+      };
+    } catch (error) {
+      console.log('[ERROR] -> users.services.findById');
+      return {
+        ok: false,
+        error: '저기여 유저가 없어라!!',
+      };
+    }
   }
 
   async editProfile(
     userId: number,
     { email, password }: EditProfileInput,
-  ): Promise<User> {
-    const user = await this.users.findOneBy({ id: userId });
+  ): Promise<EditProfileOutput> {
+    try {
+      const user = await this.users.findOne({ where: { id: userId } });
+      if (email) {
+        user.email = email;
+        user.verified = false;
+        await this.verifications.save(this.verifications.create({ user }));
+      }
 
-    // TODO: [] Email Verify
-    if (email) user.email = email;
-    if (password) user.password = password;
+      if (password) {
+        user.password = password;
+      }
 
-    return await this.users.save(user);
+      await this.users.save(user);
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        error: '저기여!! 유저 프로파일을 업데이트 할 수 없어요',
+      };
+    }
+  }
+
+  async emailVerify(code: string): Promise<EmailVerifyOutput> {
+    try {
+      const verification = await this.verifications.findOne({
+        where: {
+          code,
+        },
+        relations: ['user'],
+      });
+
+      if (verification) {
+        verification.user.verified = true;
+        await this.users.save(verification.user);
+        await this.verifications.delete(verification.id);
+        return { ok: true };
+      }
+      return { ok: false, error: '이메일 인증 정보를 받을수가 없어라!!' };
+    } catch (error) {
+      console.log('[ERROR] -> user.service.emailVerify');
+      return { ok: false, error: '이메일 인증에 실패했어용~' };
+    }
   }
 }

@@ -15,6 +15,7 @@ import {
   EditProfileInput,
   EditProfileOutput,
 } from './dtos/edit.user-profile.dto';
+import { EmailVerifyInput, EmailVerifyOutput } from './dtos/verify-email.dto';
 
 @Resolver(() => User)
 export class UsersResolver {
@@ -29,32 +30,12 @@ export class UsersResolver {
   async createAccount(
     @Args('input') createAccountInput: CreateAccountInput,
   ): Promise<CreateAccountOutput> {
-    try {
-      const [ok, error] =
-        await this.userService.createAccount(createAccountInput);
-      return {
-        ok,
-        error,
-      };
-    } catch (error) {
-      return {
-        error,
-        ok: false,
-      };
-    }
+    return this.userService.createAccount(createAccountInput);
   }
 
   @Mutation(() => LoginOutput)
   async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    try {
-      return await this.userService.login(loginInput);
-    } catch (error) {
-      console.log('resolver->login: ', error);
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.userService.login(loginInput);
   }
 
   @Query(() => User)
@@ -68,19 +49,7 @@ export class UsersResolver {
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutout> {
-    try {
-      const user = await this.userService.findById(userProfileInput.userId);
-      if (!user) throw Error();
-      return {
-        ok: true,
-        user: user,
-      };
-    } catch (error) {
-      return {
-        error: '저기여! 유저가 없어용!!',
-        ok: false,
-      };
-    }
+    return this.userService.findById(userProfileInput.userId);
   }
 
   @Mutation(() => EditProfileOutput)
@@ -89,16 +58,13 @@ export class UsersResolver {
     @AuthUser() authUser: User,
     @Args('input') editProfileInput: EditProfileInput,
   ): Promise<EditProfileOutput> {
-    try {
-      await this.userService.editProfile(authUser.id, editProfileInput);
-      return {
-        ok: true,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error: 'error',
-      };
-    }
+    return this.userService.editProfile(authUser.id, editProfileInput);
+  }
+
+  @Mutation(() => EmailVerifyOutput)
+  async emailVerify(
+    @Args('input') emailVeryfyInput: EmailVerifyInput,
+  ): Promise<EmailVerifyOutput> {
+    return this.userService.emailVerify(emailVeryfyInput.code);
   }
 }
