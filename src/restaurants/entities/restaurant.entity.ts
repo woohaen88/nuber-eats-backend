@@ -12,13 +12,18 @@ export class Restaurant extends CoreEntity {
   @Field(() => String)
   @Column()
   @IsString()
-  @Length(5, 10)
+  @Length(5, 20)
   name: string;
 
   @Field(() => String)
   @Column()
   @IsString()
   address: string;
+
+  @Field(() => String)
+  @Column()
+  @IsString()
+  coverImg: string;
 
   @Field(() => [User])
   @ManyToOne(() => User, (user) => user.restaurants, { onDelete: 'CASCADE' })
