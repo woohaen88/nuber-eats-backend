@@ -54,3 +54,18 @@ it.todo('verify');
 - category
 - address
 - coverImage
+
+
+## Category
+
+- See Categories
+- See Restaurants by Category (pagination)
+- See Restaurants (pagination)
+- See Restaurant
+
+- Edit Restaurant
+- Delete Restaurant
+
+- Create Dish
+- Edit Dish
+- Delete Dish
