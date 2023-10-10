@@ -12,6 +12,10 @@ import {
   EditRestaurantInput,
   EditRestaurantOutput,
 } from './dtos/edit-restaurant.dto';
+import {
+  DeleteRestaurantInput,
+  DeleteRestaurantOutput,
+} from './dtos/delete-restaurant.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -24,20 +28,21 @@ export class RestaurantService {
     private readonly categories: Repository<Category>,
   ) {}
 
-  async getOrCreateCategory(name: string): Promise<Category> {
-    const categoryName = name.trim().toLowerCase(); // 앞뒤 공백제거 -> 소문자 변환
-    const categorySlug = categoryName.replace(/ /g, '-'); // 공백 -> -
+  async getOrCreateCategory(name: string) {
+    const categoryName = name.trim().toLowerCase();
+    const categorySlug = categoryName.replace('/ /g', '-');
     let category = await this.categories.findOne({
       where: { slug: categorySlug },
     });
+
     if (!category) {
-      // 카테고리가 없으면 생성
       category = await this.categories.save(
         this.categories.create({ slug: categorySlug, name: categoryName }),
       );
     }
     return category;
   }
+
   async createRestaurant(
     owner: User,
     createRestaurantInput: CreateRestaurantInput,
@@ -52,10 +57,10 @@ export class RestaurantService {
       return {
         ok: true,
       };
-    } catch {
+    } catch (error) {
       return {
         ok: false,
-        error: '레스토라을 만들수가 없어라~~',
+        error,
       };
     }
   }
@@ -82,19 +87,55 @@ export class RestaurantService {
         };
       }
       // edit restaurant logic
+      let category: Category = null;
       if (editRestaurantInput.categoryName) {
-        restaunant.category = await this.getOrCreateCategory(
+        category = await this.getOrCreateCategory(
           editRestaurantInput.categoryName,
         );
-        return {
-          ok: true,
-        };
       }
+
+      await this.restaurants.save([
+        {
+          id: editRestaurantInput.restaurantId,
+          ...editRestaurantInput,
+          ...(category && { category }),
+        },
+      ]);
+
       return { ok: true };
     } catch (error) {
       return {
         ok: false,
         error: '흠.... restaurant를 수정할수가 없어요~',
+      };
+    }
+  }
+
+  async deleteRestaurant(
+    owner: User,
+    deleteRestaurantInput: DeleteRestaurantInput,
+  ): Promise<DeleteRestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOneOrFail({
+        where: { id: deleteRestaurantInput.restaurantId },
+      });
+
+      if (owner.id !== restaurant.ownerId) {
+        return {
+          ok: false,
+          error: '저기여 남에껄 지울라고하면 오또케',
+        };
+      }
+
+      this.restaurants.delete({ id: restaurant.id });
+      return {
+        ok: true,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error,
       };
     }
   }
