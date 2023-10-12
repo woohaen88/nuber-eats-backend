@@ -20,11 +20,11 @@ export class Category extends CoreEntity {
   coverImg: string;
 
   @Field(() => String)
-  @Column()
+  @Column({ unique: true })
   @IsString()
   slug: string;
 
-  @Field(() => [Restaurant])
+  @Field(() => [Restaurant], { nullable: true })
   @OneToMany(() => Restaurant, (restaurant) => restaurant.category)
-  restaurants: Restaurant[];
+  restaurants?: Restaurant[];
 }

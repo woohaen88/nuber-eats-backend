@@ -16,6 +16,8 @@ import {
   DeleteRestaurantInput,
   DeleteRestaurantOutput,
 } from './dtos/delete-restaurant.dto';
+import { AllCategoriesOutput } from './dtos/all-categories.dto';
+import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -30,7 +32,8 @@ export class RestaurantService {
 
   async getOrCreateCategory(name: string) {
     const categoryName = name.trim().toLowerCase();
-    const categorySlug = categoryName.replace('/ /g', '-');
+
+    const categorySlug = categoryName.replace(/ /g, '-');
     let category = await this.categories.findOne({
       where: { slug: categorySlug },
     });
@@ -136,6 +139,54 @@ export class RestaurantService {
       return {
         ok: false,
         error,
+      };
+    }
+  }
+
+  async allCategories(): Promise<AllCategoriesOutput> {
+    try {
+      const categories = await this.categories.find();
+      return {
+        ok: true,
+        categories,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: '카테고리를 불러올 수 없어영',
+      };
+    }
+  }
+
+  async countRestaurants(category: Category) {
+    let restaurants: Restaurant[];
+    await this.restaurants.find({ loadRelationIds: true }).then((res) => {
+      restaurants = res.filter((arg) => arg.categoryId === category.id);
+      return restaurants;
+    });
+
+    return restaurants.length;
+  }
+
+  async findCategoryBySlug({ slug }: CategoryInput): Promise<CategoryOutput> {
+    try {
+      const category = await this.categories.findOne({ where: { slug } });
+      if (!category) {
+        return {
+          ok: false,
+          error: '카테고리릋 찾을 수가 없어라~',
+        };
+      }
+      return {
+        ok: true,
+        category,
+      };
+    } catch (error) {
+      console.log('restaurant.service', error);
+      return {
+        ok: false,
+        error: '카테고리를 불어올수 없어용~',
       };
     }
   }

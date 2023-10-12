@@ -38,4 +38,7 @@ export class Restaurant extends CoreEntity {
     nullable: true,
   })
   category: Category;
+
+  @RelationId((restaurant: Restaurant) => restaurant.category)
+  categoryId: number;
 }
