@@ -169,18 +169,36 @@ export class RestaurantService {
     return restaurants.length;
   }
 
-  async findCategoryBySlug({ slug }: CategoryInput): Promise<CategoryOutput> {
+  async findCategoryBySlug({
+    slug,
+    page,
+  }: CategoryInput): Promise<CategoryOutput> {
     try {
-      const category = await this.categories.findOne({ where: { slug } });
+      const category = await this.categories.findOne({
+        where: { slug },
+        relations: ['restaurants'],
+      });
       if (!category) {
         return {
           ok: false,
-          error: '카테고리릋 찾을 수가 없어라~',
+          error: '카테고리를 찾을 수가 없어라~',
         };
       }
+      const pageSize = 3;
+
+      const restaurants = await this.restaurants.find({
+        where: { category: { id: category.id } },
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+        relations: ['category'],
+      });
+
+      category.restaurants = restaurants;
+      const totalResult = await this.countRestaurants(category);
       return {
         ok: true,
         category,
+        totalPage: ~~(totalResult / pageSize) + 1,
       };
     } catch (error) {
       console.log('restaurant.service', error);
