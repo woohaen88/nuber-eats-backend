@@ -62,9 +62,13 @@ it.todo('verify');
 - See Restaurants by Category (pagination)
 - See Restaurants (pagination)
 - See Restaurant
+- SearchResult
+
+
 
 - Edit Restaurant
 - Delete Restaurant
+
 
 - Create Dish
 - Edit Dish

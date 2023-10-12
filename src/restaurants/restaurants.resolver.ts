@@ -28,10 +28,18 @@ import {
 import { Category } from './entities/category.entity';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
+import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 
 @Resolver(() => Restaurant)
 export class restaurantResolver {
   constructor(private readonly restaurantService: RestaurantService) {}
+
+  @Query(() => RestaurantsOutput)
+  restaurants(
+    @Args() restaurantsInput: RestaurantsInput,
+  ): Promise<RestaurantsOutput> {
+    return this.restaurantService.restaruants(restaurantsInput);
+  }
 
   @Mutation(() => CreateRestaurantOutput)
   @Role(['Owner'])
