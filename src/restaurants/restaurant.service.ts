@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Restaurant } from './entities/restaurant.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Raw, Repository } from 'typeorm';
 import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
@@ -19,6 +19,11 @@ import {
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
+import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
+import {
+  SearchRestaurantInput,
+  SearchRestaurantOutput,
+} from './dtos/search-restaurant.dto';
 
 const PAGE_SIZE = 3;
 
@@ -47,6 +52,67 @@ export class RestaurantService {
       );
     }
     return category;
+  }
+
+  async findByRestaurantId({
+    restaurantId,
+  }: RestaurantInput): Promise<RestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOne({
+        where: { id: restaurantId },
+      });
+
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: '해당 레스토랑은 없어라~',
+        };
+      }
+
+      return {
+        ok: true,
+        result: restaurant,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: '레스토랑을 불러올 수 없어용~',
+      };
+    }
+  }
+
+  async findBySearchName({
+    query,
+    page,
+  }: SearchRestaurantInput): Promise<SearchRestaurantOutput> {
+    try {
+      const [restaurants, totalResults] = await this.restaurants.findAndCount({
+        where: {
+          name: Raw((name) => `${name} ILIKE '%${query}%'`),
+        },
+        take: PAGE_SIZE,
+        skip: (page - 1) * PAGE_SIZE,
+      });
+
+      if (!restaurants) {
+        return {
+          ok: false,
+          error: '해당 레스토랑이 없어영~~',
+        };
+      }
+
+      return {
+        ok: true,
+        result: restaurants,
+        totalPage: ~~(totalResults / PAGE_SIZE) + 1,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error,
+      };
+    }
   }
 
   async createRestaurant(
@@ -146,6 +212,8 @@ export class RestaurantService {
     }
   }
 
+  // ========== category ==========
+
   async allCategories(): Promise<AllCategoriesOutput> {
     try {
       const categories = await this.categories.find();
@@ -210,7 +278,7 @@ export class RestaurantService {
       };
     }
   }
-  async restaruants({ page }: RestaurantsInput): Promise<RestaurantsOutput> {
+  async allRestaruants({ page }: RestaurantsInput): Promise<RestaurantsOutput> {
     try {
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         skip: (page - 1) * PAGE_SIZE,
