@@ -16,15 +16,11 @@ import {
   EditProfileOutput,
 } from './dtos/edit.user-profile.dto';
 import { EmailVerifyInput, EmailVerifyOutput } from './dtos/verify-email.dto';
+import { Role } from '../auth/role.decorator';
 
 @Resolver(() => User)
 export class UsersResolver {
   constructor(private readonly userService: UsersService) {}
-
-  @Query(() => Boolean)
-  hi() {
-    return true;
-  }
 
   @Mutation(() => CreateAccountOutput)
   async createAccount(
@@ -39,12 +35,12 @@ export class UsersResolver {
   }
 
   @Query(() => User)
-  @UseGuards(AuthGuard)
+  @Role(['Any'])
   me(@AuthUser() authUser: User) {
     return authUser;
   }
 
-  @UseGuards(AuthGuard)
+  @Role(['Any'])
   @Query(() => UserProfileOutout)
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
@@ -53,7 +49,7 @@ export class UsersResolver {
   }
 
   @Mutation(() => EditProfileOutput)
-  @UseGuards(AuthGuard)
+  @Role(['Any'])
   async editProfile(
     @AuthUser() authUser: User,
     @Args('input') editProfileInput: EditProfileInput,
@@ -62,6 +58,7 @@ export class UsersResolver {
   }
 
   @Mutation(() => EmailVerifyOutput)
+  @Role(['Any'])
   async emailVerify(
     @Args('input') emailVeryfyInput: EmailVerifyInput,
   ): Promise<EmailVerifyOutput> {

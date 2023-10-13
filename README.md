@@ -46,7 +46,30 @@ describe('이름', () => {
 it.todo('something');
 it.todo('verify');
 });
-
-
-
 ```
+
+## Restaurant Model
+
+- name  
+- category
+- address
+- coverImage
+
+
+## Category
+
+- See Categories
+- See Restaurants by Category (pagination)
+- See Restaurants (pagination)
+- See Restaurant
+- SearchResult
+
+
+
+- Edit Restaurant
+- Delete Restaurant
+
+
+- Create Dish
+- Edit Dish
+- Delete Dish
