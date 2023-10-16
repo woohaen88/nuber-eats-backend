@@ -24,6 +24,7 @@ import {
   SearchRestaurantInput,
   SearchRestaurantOutput,
 } from './dtos/search-restaurant.dto';
+import { CreateDishInput } from './dtos/create-dish.dto';
 
 const PAGE_SIZE = 3;
 
@@ -60,6 +61,7 @@ export class RestaurantService {
     try {
       const restaurant = await this.restaurants.findOne({
         where: { id: restaurantId },
+        relations: ['menu'],
       });
 
       if (!restaurant) {
@@ -294,6 +296,17 @@ export class RestaurantService {
         ok: false,
         error,
       };
+    }
+  }
+
+  // Dish
+  async createDish(
+    owner: User,
+    createRestaurantInput: CreateDishInput,
+  ): Promise<CreateRestaurantOutput> {
+    try {
+    } catch (error) {
+      return { ok: false, error };
     }
   }
 }
