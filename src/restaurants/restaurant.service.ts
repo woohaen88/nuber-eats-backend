@@ -25,6 +25,9 @@ import {
   SearchRestaurantOutput,
 } from './dtos/search-restaurant.dto';
 import { CreateDishInput } from './dtos/create-dish.dto';
+import { Dish } from './entities/dish.entity';
+import { DeleteDishInput } from './dtos/delete-dish.dto';
+import { EditDishInput, EditDishOutput } from './dtos/edit-dish.dto';
 
 const PAGE_SIZE = 3;
 
@@ -37,6 +40,9 @@ export class RestaurantService {
 
     @InjectRepository(Category)
     private readonly categories: Repository<Category>,
+
+    @InjectRepository(Dish)
+    private readonly dishRepository: Repository<Dish>,
   ) {}
 
   async getOrCreateCategory(name: string) {
@@ -300,13 +306,132 @@ export class RestaurantService {
   }
 
   // Dish
+  /**
+   * 1. Restaurant를 찾고
+   * 2. owner와 restaurant의 owner가 같은지 확인
+   * 3. dish를 생성
+   * 4. restaurant에 dish를 추가
+   */
   async createDish(
     owner: User,
-    createRestaurantInput: CreateDishInput,
+    createDishInput: CreateDishInput,
   ): Promise<CreateRestaurantOutput> {
     try {
+      const restaurant = await this.restaurants.findOne({
+        where: { id: createDishInput.restaurantId },
+      });
+
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: '레스토랑이 존재하지 않아용',
+        };
+      }
+
+      if (restaurant.ownerId != owner.id) {
+        return {
+          ok: false,
+          error: '저기여~ 레스토랑 주인이 아닌거 같은데엽~',
+        };
+      }
+
+      await this.dishRepository.save(
+        this.dishRepository.create({ ...createDishInput, restaurant }),
+      );
+      return {
+        ok: true,
+      };
     } catch (error) {
-      return { ok: false, error };
+      return { ok: false, error: 'dish를 만들수가 없어요' };
+    }
+  }
+
+  /**
+   * 1. Restaurant를 찾고
+   * 2. owner와 restaurant의 owner가 같은지 확인
+   * 3. dish를 삭제
+   */
+  async deleteDish(
+    owner: User,
+    { dishId }: DeleteDishInput,
+  ): Promise<DeleteRestaurantOutput> {
+    try {
+      const dish = await this.dishRepository.findOneOrFail({
+        where: {
+          id: dishId,
+        },
+        relations: ['restaurant'],
+      });
+
+      if (!dish) {
+        return {
+          ok: false,
+          error: 'dish를 찾을 수가 없어라',
+        };
+      }
+
+      if (owner.id != dish.restaurant.ownerId) {
+        return {
+          ok: false,
+          error: '남에껄 지울순 없어요',
+        };
+      }
+
+      this.dishRepository.delete({ id: dish.id });
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'dish를 삭제할 수가 없습니다.',
+      };
+    }
+  }
+
+  /**
+   * 1. Restaurant를 찾고
+   * 2. owner와 restaurant의 owner가 같은지 확인
+   * 3. dish를 업데이트
+   */
+  async editDish(
+    owner: User,
+    editDishInput: EditDishInput,
+  ): Promise<EditDishOutput> {
+    try {
+      const dish = await this.dishRepository.findOne({
+        where: { id: editDishInput.dishId },
+        relations: ['restaurant'],
+      });
+
+      if (!dish) {
+        return {
+          ok: false,
+          error: 'dish를 찾을 수가 없어라',
+        };
+      }
+
+      if (owner.id !== dish.restaurant.ownerId) {
+        return {
+          ok: false,
+          error: '남에껄 수정할라하면 오또케',
+        };
+      }
+
+      this.dishRepository.save([
+        {
+          id: editDishInput.dishId,
+          ...editDishInput,
+        },
+      ]);
+      return {
+        ok: true,
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: 'dish를 수정할 수 없으셈',
+      };
     }
   }
 }

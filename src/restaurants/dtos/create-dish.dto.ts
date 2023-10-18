@@ -3,11 +3,11 @@
  * dish를 추가하려고 하면 어떤 레스토랑인지가 필요
  */
 
-import { ArgsType, Field, Int, ObjectType, PickType } from '@nestjs/graphql';
+import { Field, InputType, Int, ObjectType, PickType } from '@nestjs/graphql';
 import { Dish } from '../entities/dish.entity';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 
-@ArgsType()
+@InputType('CreateDishInputType', { isAbstract: true })
 export class CreateDishInput extends PickType(Dish, [
   'name',
   'price',
