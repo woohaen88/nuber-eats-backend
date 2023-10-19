@@ -6,11 +6,19 @@ import {
 } from '@nestjs/graphql';
 
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Driver,
+  Entity,
+  OneToMany,
+} from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
 import { Restaurant } from '../../restaurants/entities/restaurant.entity';
+import { Order } from 'src/orders/entitis/order.entity';
 
 export enum UserRole {
   Client = 'Client',
@@ -48,6 +56,15 @@ export class User extends CoreEntity {
   @OneToMany(() => Restaurant, (restaurant) => restaurant.owner)
   restaurants: Restaurant[];
 
+  // @Field(() => [Order], { nullable: true })
+  @OneToMany(() => Order, (order) => order.customer)
+  orders?: Order[];
+
+  // @Field(()=>[Order])
+  @OneToMany(() => Order, (order: Order) => order.driver)
+  driver: Driver;
+
+  // ========== METHOD ==========
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
